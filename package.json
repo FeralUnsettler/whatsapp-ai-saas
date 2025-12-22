@@ -1,0 +1,32 @@
+{
+  "name": "whatsapp-ai-saas",
+  "version": "1.0.0",
+  "description": "Multi-tenant WhatsApp AI SaaS with Supabase, Gemini, and n8n",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "npm run dev --prefix frontend",
+    "build": "npm run build --prefix frontend",
+    "preview": "npm run preview --prefix frontend",
+    "lint": "npm run lint --prefix frontend",
+    "typecheck": "npm run typecheck --prefix frontend",
+    "supabase:start": "npx supabase start",
+    "supabase:stop": "npx supabase stop",
+    "supabase:db:reset": "npx supabase db reset",
+    "supabase:functions:serve": "npx supabase functions serve",
+    "supabase:functions:deploy": "npx supabase functions deploy"
+  },
+  "keywords": [
+    "whatsapp",
+    "ai",
+    "saas",
+    "supabase",
+    "gemini",
+    "n8n"
+  ],
+  "author": "",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

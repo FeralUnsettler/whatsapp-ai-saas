@@ -1,0 +1,12 @@
+{
+    "deno.enablePaths": [
+        "supabase/functions",
+        "scripts"
+    ],
+    "deno.unstable": [],
+    "deno.lint": true,
+    "css.lint.unknownAtRules": "ignore",
+    "files.associations": {
+        "*.css": "tailwindcss"
+    }
+}

@@ -1,0 +1,129 @@
+{
+    "name": "Escalation Alert",
+    "nodes": [
+        {
+            "parameters": {
+                "httpMethod": "POST",
+                "path": "escalation",
+                "responseMode": "onReceived",
+                "responseData": "allEntries"
+            },
+            "name": "Webhook - Escalation",
+            "type": "n8n-nodes-base.webhook",
+            "typeVersion": 1,
+            "position": [
+                240,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "channel": "#support-urgent",
+                "text": "🚨 *ESCALAÇÃO NECESSÁRIA*\n\n👤 *Cliente:* {{$json.customerName || $json.customerPhone}}\n📱 *Telefone:* {{$json.customerPhone}}\n⚠️ *Motivo:* {{$json.reason}}\n\n_O cliente está aguardando atendimento humano._\n\n<{{$env.DASHBOARD_URL}}/conversations/{{$json.conversationId}}|Ver conversa no dashboard>",
+                "attachments": [],
+                "otherOptions": {
+                    "mrkdwn": true
+                }
+            },
+            "name": "Slack - Escalation Alert",
+            "type": "n8n-nodes-base.slack",
+            "typeVersion": 1,
+            "position": [
+                460,
+                200
+            ]
+        },
+        {
+            "parameters": {
+                "fromEmail": "noreply@yourdomain.com",
+                "toEmail": "={{$env.SUPPORT_EMAIL}}",
+                "subject": "🚨 URGENTE: Escalação - {{$json.customerPhone}}",
+                "text": "Uma conversa foi escalada e precisa de atendimento humano.\n\nCliente: {{$json.customerName || 'Não informado'}}\nTelefone: {{$json.customerPhone}}\nMotivo da escalação: {{$json.reason}}\n\nAcesse o dashboard imediatamente:\n{{$env.DASHBOARD_URL}}/conversations/{{$json.conversationId}}",
+                "options": {
+                    "priority": "high"
+                }
+            },
+            "name": "Email - Urgent",
+            "type": "n8n-nodes-base.emailSend",
+            "typeVersion": 1,
+            "position": [
+                460,
+                400
+            ]
+        },
+        {
+            "parameters": {
+                "url": "={{$env.SUPABASE_URL}}/rest/v1/conversations?id=eq.{{$json.conversationId}}",
+                "sendHeaders": true,
+                "headerParameters": {
+                    "parameters": [
+                        {
+                            "name": "apikey",
+                            "value": "={{$env.SUPABASE_SERVICE_KEY}}"
+                        },
+                        {
+                            "name": "Authorization",
+                            "value": "Bearer {{$env.SUPABASE_SERVICE_KEY}}"
+                        },
+                        {
+                            "name": "Content-Type",
+                            "value": "application/json"
+                        },
+                        {
+                            "name": "Prefer",
+                            "value": "return=representation"
+                        }
+                    ]
+                },
+                "method": "PATCH",
+                "body": "{\n  \"metadata\": {\n    \"escalated_at\": \"{{$now.toISO()}}\",\n    \"escalation_reason\": \"{{$json.reason}}\",\n    \"notification_sent\": true\n  }\n}",
+                "options": {}
+            },
+            "name": "Update Conversation Metadata",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 3,
+            "position": [
+                680,
+                300
+            ]
+        }
+    ],
+    "connections": {
+        "Webhook - Escalation": {
+            "main": [
+                [
+                    {
+                        "node": "Slack - Escalation Alert",
+                        "type": "main",
+                        "index": 0
+                    },
+                    {
+                        "node": "Email - Urgent",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Slack - Escalation Alert": {
+            "main": [
+                [
+                    {
+                        "node": "Update Conversation Metadata",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    },
+    "settings": {
+        "executionOrder": "v1"
+    },
+    "staticData": null,
+    "tags": [
+        "whatsapp-ai",
+        "escalation",
+        "urgent"
+    ]
+}

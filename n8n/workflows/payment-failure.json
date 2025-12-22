@@ -1,0 +1,175 @@
+{
+    "name": "Payment Failure Handler",
+    "nodes": [
+        {
+            "parameters": {
+                "httpMethod": "POST",
+                "path": "payment-failure",
+                "responseMode": "onReceived",
+                "responseData": "allEntries"
+            },
+            "name": "Webhook - Payment Failed",
+            "type": "n8n-nodes-base.webhook",
+            "typeVersion": 1,
+            "position": [
+                240,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "url": "={{$env.SUPABASE_URL}}/rest/v1/agents?client_id=eq.{{$json.clientId}}",
+                "sendHeaders": true,
+                "headerParameters": {
+                    "parameters": [
+                        {
+                            "name": "apikey",
+                            "value": "={{$env.SUPABASE_SERVICE_KEY}}"
+                        },
+                        {
+                            "name": "Authorization",
+                            "value": "Bearer {{$env.SUPABASE_SERVICE_KEY}}"
+                        },
+                        {
+                            "name": "Content-Type",
+                            "value": "application/json"
+                        }
+                    ]
+                },
+                "method": "PATCH",
+                "body": "{\n  \"is_active\": false\n}",
+                "options": {}
+            },
+            "name": "Disable Agents",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 3,
+            "position": [
+                460,
+                200
+            ]
+        },
+        {
+            "parameters": {
+                "url": "={{$env.SUPABASE_URL}}/rest/v1/clients?id=eq.{{$json.clientId}}",
+                "sendHeaders": true,
+                "headerParameters": {
+                    "parameters": [
+                        {
+                            "name": "apikey",
+                            "value": "={{$env.SUPABASE_SERVICE_KEY}}"
+                        },
+                        {
+                            "name": "Authorization",
+                            "value": "Bearer {{$env.SUPABASE_SERVICE_KEY}}"
+                        },
+                        {
+                            "name": "Content-Type",
+                            "value": "application/json"
+                        }
+                    ]
+                },
+                "method": "PATCH",
+                "body": "{\n  \"status\": \"suspended\"\n}",
+                "options": {}
+            },
+            "name": "Suspend Client",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 3,
+            "position": [
+                460,
+                400
+            ]
+        },
+        {
+            "parameters": {
+                "fromEmail": "billing@yourdomain.com",
+                "toEmail": "={{$json.clientEmail}}",
+                "subject": "⚠️ Ação necessária: Falha no pagamento",
+                "text": "Olá,\n\nIdentificamos uma falha no processamento do seu pagamento.\n\nSeu agente de atendimento foi temporariamente desativado.\n\nPara reativar o serviço, atualize suas informações de pagamento:\n{{$env.DASHBOARD_URL}}/billing\n\nDúvidas? Responda este email.\n\nEquipe WhatsApp AI",
+                "options": {}
+            },
+            "name": "Email - Payment Failed",
+            "type": "n8n-nodes-base.emailSend",
+            "typeVersion": 1,
+            "position": [
+                680,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "channel": "#billing-alerts",
+                "text": "⚠️ *Falha de Pagamento*\n\n🏢 Cliente ID: {{$json.clientId}}\n📧 Email: {{$json.clientEmail}}\n💳 Motivo: {{$json.failureReason}}\n\n_Agentes desativados automaticamente._",
+                "attachments": [],
+                "otherOptions": {}
+            },
+            "name": "Slack - Billing Alert",
+            "type": "n8n-nodes-base.slack",
+            "typeVersion": 1,
+            "position": [
+                900,
+                300
+            ]
+        }
+    ],
+    "connections": {
+        "Webhook - Payment Failed": {
+            "main": [
+                [
+                    {
+                        "node": "Disable Agents",
+                        "type": "main",
+                        "index": 0
+                    },
+                    {
+                        "node": "Suspend Client",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Disable Agents": {
+            "main": [
+                [
+                    {
+                        "node": "Email - Payment Failed",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Suspend Client": {
+            "main": [
+                [
+                    {
+                        "node": "Email - Payment Failed",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Email - Payment Failed": {
+            "main": [
+                [
+                    {
+                        "node": "Slack - Billing Alert",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    },
+    "settings": {
+        "executionOrder": "v1"
+    },
+    "staticData": null,
+    "tags": [
+        "whatsapp-ai",
+        "billing",
+        "payment"
+    ]
+}

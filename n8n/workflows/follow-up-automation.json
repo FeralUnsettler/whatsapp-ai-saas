@@ -1,0 +1,216 @@
+{
+    "name": "Follow-up Automation",
+    "nodes": [
+        {
+            "parameters": {
+                "rule": {
+                    "interval": [
+                        {
+                            "triggerAtHour": 10
+                        }
+                    ]
+                }
+            },
+            "name": "Daily Trigger",
+            "type": "n8n-nodes-base.scheduleTrigger",
+            "typeVersion": 1,
+            "position": [
+                240,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "url": "={{$env.SUPABASE_URL}}/rest/v1/leads?status=in.(new,contacted)&last_contact_at=lt.{{$now.minus({days: 3}).toISO()}}",
+                "sendHeaders": true,
+                "headerParameters": {
+                    "parameters": [
+                        {
+                            "name": "apikey",
+                            "value": "={{$env.SUPABASE_SERVICE_KEY}}"
+                        },
+                        {
+                            "name": "Authorization",
+                            "value": "Bearer {{$env.SUPABASE_SERVICE_KEY}}"
+                        }
+                    ]
+                },
+                "options": {}
+            },
+            "name": "Fetch Stale Leads",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 3,
+            "position": [
+                460,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "conditions": {
+                    "number": [
+                        {
+                            "value1": "={{$json.length}}",
+                            "operation": "largerEqual",
+                            "value2": 1
+                        }
+                    ]
+                }
+            },
+            "name": "Has Stale Leads?",
+            "type": "n8n-nodes-base.if",
+            "typeVersion": 1,
+            "position": [
+                680,
+                300
+            ]
+        },
+        {
+            "parameters": {},
+            "name": "Loop Leads",
+            "type": "n8n-nodes-base.splitInBatches",
+            "typeVersion": 2,
+            "position": [
+                900,
+                200
+            ]
+        },
+        {
+            "parameters": {
+                "url": "={{$env.SUPABASE_URL}}/functions/v1/send-whatsapp",
+                "sendHeaders": true,
+                "headerParameters": {
+                    "parameters": [
+                        {
+                            "name": "Authorization",
+                            "value": "Bearer {{$env.SUPABASE_SERVICE_KEY}}"
+                        },
+                        {
+                            "name": "Content-Type",
+                            "value": "application/json"
+                        }
+                    ]
+                },
+                "method": "POST",
+                "body": "{\n  \"conversationId\": \"{{$json.conversation_id}}\",\n  \"content\": \"Olá! 👋 Passando para saber se posso ajudar com mais alguma coisa. Estamos à disposição!\",\n  \"senderType\": \"system\"\n}",
+                "options": {}
+            },
+            "name": "Send Follow-up Message",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 3,
+            "position": [
+                1120,
+                200
+            ]
+        },
+        {
+            "parameters": {
+                "url": "={{$env.SUPABASE_URL}}/rest/v1/leads?id=eq.{{$json.id}}",
+                "sendHeaders": true,
+                "headerParameters": {
+                    "parameters": [
+                        {
+                            "name": "apikey",
+                            "value": "={{$env.SUPABASE_SERVICE_KEY}}"
+                        },
+                        {
+                            "name": "Authorization",
+                            "value": "Bearer {{$env.SUPABASE_SERVICE_KEY}}"
+                        },
+                        {
+                            "name": "Content-Type",
+                            "value": "application/json"
+                        }
+                    ]
+                },
+                "method": "PATCH",
+                "body": "{\n  \"status\": \"contacted\",\n  \"last_contact_at\": \"{{$now.toISO()}}\"\n}",
+                "options": {}
+            },
+            "name": "Update Lead Status",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 3,
+            "position": [
+                1340,
+                200
+            ]
+        }
+    ],
+    "connections": {
+        "Daily Trigger": {
+            "main": [
+                [
+                    {
+                        "node": "Fetch Stale Leads",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Fetch Stale Leads": {
+            "main": [
+                [
+                    {
+                        "node": "Has Stale Leads?",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Has Stale Leads?": {
+            "main": [
+                [
+                    {
+                        "node": "Loop Leads",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Loop Leads": {
+            "main": [
+                [
+                    {
+                        "node": "Send Follow-up Message",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Send Follow-up Message": {
+            "main": [
+                [
+                    {
+                        "node": "Update Lead Status",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Update Lead Status": {
+            "main": [
+                [
+                    {
+                        "node": "Loop Leads",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    },
+    "settings": {
+        "executionOrder": "v1"
+    },
+    "staticData": null,
+    "tags": [
+        "whatsapp-ai",
+        "follow-up",
+        "automation"
+    ]
+}

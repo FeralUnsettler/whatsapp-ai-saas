@@ -1,0 +1,147 @@
+{
+    "name": "New Lead Notification",
+    "nodes": [
+        {
+            "parameters": {
+                "httpMethod": "POST",
+                "path": "new-lead",
+                "responseMode": "onReceived",
+                "responseData": "allEntries"
+            },
+            "name": "Webhook - New Lead",
+            "type": "n8n-nodes-base.webhook",
+            "typeVersion": 1,
+            "position": [
+                240,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "conditions": {
+                    "string": [
+                        {
+                            "value1": "={{$json.temperature}}",
+                            "operation": "equals",
+                            "value2": "hot"
+                        }
+                    ]
+                }
+            },
+            "name": "IF Hot Lead",
+            "type": "n8n-nodes-base.if",
+            "typeVersion": 1,
+            "position": [
+                460,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "channel": "#leads-hot",
+                "text": "🔥 *Novo Lead QUENTE!*\n\n👤 *Nome:* {{$json.customerName}}\n📱 *Telefone:* {{$json.customerPhone}}\n📊 *Score:* Alto\n\nAcesse o dashboard para mais detalhes.",
+                "attachments": [],
+                "otherOptions": {}
+            },
+            "name": "Slack - Hot Lead Alert",
+            "type": "n8n-nodes-base.slack",
+            "typeVersion": 1,
+            "position": [
+                680,
+                200
+            ]
+        },
+        {
+            "parameters": {
+                "channel": "#leads",
+                "text": "📩 *Novo Lead Capturado*\n\n👤 *Nome:* {{$json.customerName}}\n📱 *Telefone:* {{$json.customerPhone}}\n🌡️ *Temperatura:* {{$json.temperature}}\n\n_Via WhatsApp AI_",
+                "attachments": [],
+                "otherOptions": {}
+            },
+            "name": "Slack - Normal Lead",
+            "type": "n8n-nodes-base.slack",
+            "typeVersion": 1,
+            "position": [
+                680,
+                400
+            ]
+        },
+        {
+            "parameters": {
+                "fromEmail": "noreply@yourdomain.com",
+                "toEmail": "={{$env.ADMIN_EMAIL}}",
+                "subject": "🎯 Novo Lead: {{$json.customerName}}",
+                "text": "Um novo lead foi capturado:\n\nNome: {{$json.customerName}}\nTelefone: {{$json.customerPhone}}\nTemperatura: {{$json.temperature}}\n\nAcesse o dashboard para mais detalhes.",
+                "options": {}
+            },
+            "name": "Email Notification",
+            "type": "n8n-nodes-base.emailSend",
+            "typeVersion": 1,
+            "position": [
+                900,
+                300
+            ]
+        }
+    ],
+    "connections": {
+        "Webhook - New Lead": {
+            "main": [
+                [
+                    {
+                        "node": "IF Hot Lead",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "IF Hot Lead": {
+            "main": [
+                [
+                    {
+                        "node": "Slack - Hot Lead Alert",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "Slack - Normal Lead",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Slack - Hot Lead Alert": {
+            "main": [
+                [
+                    {
+                        "node": "Email Notification",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Slack - Normal Lead": {
+            "main": [
+                [
+                    {
+                        "node": "Email Notification",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    },
+    "settings": {
+        "executionOrder": "v1"
+    },
+    "staticData": null,
+    "tags": [
+        "whatsapp-ai",
+        "leads"
+    ]
+}
