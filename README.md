@@ -1,51 +1,77 @@
-# WhatsApp AI SaaS
+# WhatsAppAI®SaaS 🚀
 
-Multi-tenant SaaS para atendimento automatizado via WhatsApp com IA, usando Supabase, Gemini, n8n e React.
+**Desenvolvido por BananaMachinada®DS © 2026. Powered by BMDS®Tech**
+
+Multi-tenant SaaS para atendimento automatizado via WhatsApp com IA, projetado
+para escalar o faturamento de PMEs através de automação inteligente.
 
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Node](https://img.shields.io/badge/node-20+-blue)
 ![Supabase](https://img.shields.io/badge/supabase-edge%20functions-orange)
 
-## 🚀 Features
+## 🎯 Objetivo Comercial (Jan/2026)
 
-- **Atendimento IA**: Respostas automáticas com Gemini Pro
-- **Multi-tenant**: Suporte a múltiplos clientes com RLS
-- **MCP Protocol**: Contexto configurável por cliente
-- **Escalação**: Regras automáticas de handoff humano
-- **Dashboard**: Interface React moderna com dark/light mode
-- **Automações**: Workflows n8n para leads e notificações
-- **LGPD**: Compliance de privacidade integrado
+- **Meta:** MRR ≥ R$ 3.000
+- **Público-alvo:** Clínicas, Prestadores de Serviço, Escolas e Pequenas
+  Empresas Locais.
+- **Proposta de Valor:** Transformar o WhatsApp em uma máquina de vendas 24/7.
 
-## 📋 Requisitos
+## 🚀 Funcionalidades Pro
 
-- Node.js 20+
-- Conta Supabase (gratuita)
-- API Key Gemini (Google AI Studio)
-- WhatsApp Business API (Meta)
-- n8n (self-hosted ou cloud)
+- **Atendimento IA Humano:** Respostas naturais com Gemini 1.5 Flash.
+- **Qualificação de Leads:** Captura automática de nome, interesse e contato.
+- **Escalação Inteligente:** Transferência automática para humano em casos
+  críticos.
+- **Multi-tenant:** Isolamento total de dados via Row Level Security (RLS).
+- **Dashboard Executivo:** Visualização clara de leads, conversões e uso.
+- **Automações via n8n:** Integração com CRM e alertas proativos.
 
-## ⚡ Quick Start
+## 💰 Modelo de Negócio
 
-### 1. Clone e configure
+- **Plano Pro:** R$ 297/mês
+- **Setup Opcional:** R$ 300 (Configuração e treinamento inicial)
 
-```bash
-git clone https://github.com/seu-usuario/whatsapp-ai-saas.git
-cd whatsapp-ai-saas
-cp .env.example .env
+## 🏗️ Arquitetura Técnica
+
+```
+┌─────────────────┐     ┌──────────────────┐
+│   WhatsApp      │────▶│  Edge Function   │
+│   (Z-API / Cloud)│     │  (webhook)       │
+└─────────────────┘     └────────┬─────────┘
+                                 │
+                    ┌────────────▼────────────┐
+                    │      Supabase           │
+                    │  ┌─────────────────┐   │
+                    │  │  PostgreSQL     │   │
+                    │  │  + RLS          │   │
+                    │  └─────────────────┘   │
+                    │  ┌─────────────────┐   │
+                    │  │  Edge Functions │   │
+                    │  │  (Gemini AI)    │   │
+                    │  └─────────────────┘   │
+                    └────────────┬────────────┘
+                                 │
+               ┌──────────────────┼──────────────────┐
+               ▼                  ▼                  ▼
+     ┌─────────────────┐ ┌─────────────┐ ┌─────────────────┐
+     │  React Frontend │ │    n8n      │ │  Gemini API     │
+     │  (Dashboard)    │ │  (Webhooks) │ │  (LLM)          │
+     └─────────────────┘ └─────────────┘ └─────────────────┘
 ```
 
-### 2. Configure as variáveis de ambiente
+## 📋 Requisitos de Operação
 
-Edite `.env` com suas credenciais:
+- Supabase (Backend & Auth)
+- Gemini API (Intelligence)
+- Z-API / WhatsApp Cloud API (Communication)
+- n8n (Orchestration)
+- React + Vite (Frontend)
 
-```env
-SUPABASE_URL=https://seu-projeto.supabase.co
-SUPABASE_ANON_KEY=sua-anon-key
-SUPABASE_SERVICE_ROLE_KEY=sua-service-key
-GEMINI_API_KEY=sua-api-key
-WHATSAPP_PHONE_NUMBER_ID=seu-phone-id
-WHATSAPP_ACCESS_TOKEN=seu-token
-```
+## 🔧 Configuração Rápida
+
+1. Clone e `npm install` no frontend.
+2. Configure o `.env` com as chaves do Supabase e Gemini.
+3. Configure a Instance Z-API para o webhook.
 
 ### 3. Configure o Supabase
 
@@ -63,34 +89,6 @@ npm run dev
 ```
 
 Acesse: http://localhost:5173
-
-## 🏗️ Arquitetura
-
-```
-┌─────────────────┐     ┌──────────────────┐
-│   WhatsApp      │────▶│  Edge Function   │
-│   Cloud API     │     │  (webhook)       │
-└─────────────────┘     └────────┬─────────┘
-                                 │
-                    ┌────────────▼────────────┐
-                    │      Supabase           │
-                    │  ┌─────────────────┐   │
-                    │  │  PostgreSQL     │   │
-                    │  │  + RLS          │   │
-                    │  └─────────────────┘   │
-                    │  ┌─────────────────┐   │
-                    │  │  Edge Functions │   │
-                    │  │  (Gemini AI)    │   │
-                    │  └─────────────────┘   │
-                    └────────────┬────────────┘
-                                 │
-              ┌──────────────────┼──────────────────┐
-              ▼                  ▼                  ▼
-    ┌─────────────────┐ ┌─────────────┐ ┌─────────────────┐
-    │  React Frontend │ │    n8n      │ │  Gemini API     │
-    │  (Dashboard)    │ │  (Webhooks) │ │  (LLM)          │
-    └─────────────────┘ └─────────────┘ └─────────────────┘
-```
 
 ## 📁 Estrutura
 
@@ -136,13 +134,13 @@ whatsapp-ai-saas/
 
 O MCP define o comportamento da IA. Edite os arquivos em `/mcp`:
 
-| Arquivo | Propósito |
-|---------|-----------|
-| `system.md` | Regras globais, limites, formatos |
-| `business.md` | Info da empresa, produtos, FAQ |
-| `tone.md` | Estilo de comunicação, idioma |
-| `escalation.md` | Quando transferir para humano |
-| `compliance.md` | LGPD, retenção de dados |
+| Arquivo         | Propósito                         |
+| --------------- | --------------------------------- |
+| `system.md`     | Regras globais, limites, formatos |
+| `business.md`   | Info da empresa, produtos, FAQ    |
+| `tone.md`       | Estilo de comunicação, idioma     |
+| `escalation.md` | Quando transferir para humano     |
+| `compliance.md` | LGPD, retenção de dados           |
 
 ## 🔄 n8n Workflows
 
@@ -167,6 +165,7 @@ docker run -p 80:80 whatsapp-ai-saas
 ## 📊 Monitoramento
 
 Métricas disponíveis no dashboard:
+
 - Conversas ativas
 - Leads por temperatura
 - Taxa de escalação
@@ -185,4 +184,4 @@ MIT
 
 ---
 
-Desenvolvido com ❤️ usando Supabase, Gemini e React
+Desenvolvido com ❤️ por **BananaMachinada®DS**

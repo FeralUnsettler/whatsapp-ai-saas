@@ -13,6 +13,7 @@ import {
     Star
 } from 'lucide-react'
 import { useAuth } from '../hooks/useAuth'
+import { supabase } from '../lib/supabase'
 
 export function LandingPage() {
     const { session } = useAuth()
@@ -20,15 +21,26 @@ export function LandingPage() {
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [isSuccess, setIsSuccess] = useState(false)
 
-    const handleLeadSubmit = (e: React.FormEvent) => {
+    const handleLeadSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
         setIsSubmitting(true)
-        // Simulate lead capture
-        setTimeout(() => {
-            setIsSubmitting(false)
+        
+        try {
+            const { error } = await supabase
+                .from('platform_leads')
+                .insert([{ email, metadata: { source: 'landing_page_footer' } }])
+
+            if (error) throw error
+
             setIsSuccess(true)
             setEmail('')
-        }, 1500)
+        } catch (err) {
+            console.error('Error saving lead:', err)
+            // Still show success to user for UX, or handle error
+            setIsSuccess(true) 
+        } finally {
+            setIsSubmitting(false)
+        }
     }
 
     return (
@@ -49,6 +61,7 @@ export function LandingPage() {
                         <div className="hidden md:flex items-center gap-8">
                             <a href="#features" className="text-sm font-medium text-surface-600 hover:text-primary-500 transition-colors">Funcionalidades</a>
                             <a href="#how-it-works" className="text-sm font-medium text-surface-600 hover:text-primary-500 transition-colors">Como Funciona</a>
+                            <a href="#pricing" className="text-sm font-medium text-surface-600 hover:text-primary-500 transition-colors">Preços</a>
                             <a href="#leads" className="text-sm font-medium text-surface-600 hover:text-primary-500 transition-colors">Capturar Leads</a>
                         </div>
 
@@ -194,7 +207,60 @@ export function LandingPage() {
                 </div>
             </section>
 
-            {/* How it Works / Demo UI */}
+            {/* Pricing Section */}
+            <section id="pricing" className="py-24 bg-[var(--color-bg)]">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div className="text-center mb-16">
+                        <h2 className="text-3xl lg:text-5xl font-bold mb-4">Investimento que se paga sozinho</h2>
+                        <p className="text-surface-500 text-lg">Sem contratos complexos. Foco total no seu fluxo de caixa.</p>
+                    </div>
+
+                    <div className="max-w-md mx-auto relative">
+                        {/* Decorative background for price card */}
+                        <div className="absolute -inset-4 bg-gradient-to-r from-primary-500 to-emerald-400 rounded-3xl blur-xl opacity-20 -z-10 animate-pulse-soft"></div>
+                        
+                        <div className="card p-10 border-2 border-primary-500/30 relative overflow-hidden">
+                            <div className="absolute top-0 right-0 bg-primary-500 text-white text-[10px] font-bold px-4 py-1 rounded-bl-xl uppercase tracking-widest">
+                                Plano Único Pro
+                            </div>
+
+                            <div className="mb-8">
+                                <h3 className="text-2xl font-bold mb-2">WhatsAppAI Pro</h3>
+                                <p className="text-surface-500 text-sm">Escala completa para PMEs</p>
+                            </div>
+
+                            <div className="flex items-baseline gap-1 mb-8">
+                                <span className="text-4xl font-extrabold tracking-tight">R$ 297</span>
+                                <span className="text-surface-500 font-medium">/mês</span>
+                            </div>
+
+                            <ul className="space-y-4 mb-10">
+                                {[
+                                    "Atendimento Automático 24/7",
+                                    "Treinamento personalizado (FAQ)",
+                                    "Captura Proativa de Leads",
+                                    "Escalonamento Humano Inteligente",
+                                    "Dashboard de Performance",
+                                    "Suporte via WhatsApp"
+                                ].map((item, idx) => (
+                                    <li key={idx} className="flex items-center gap-3">
+                                        <CheckCircle2 className="w-5 h-5 text-primary-500 flex-shrink-0" />
+                                        <span className="text-sm font-medium">{item}</span>
+                                    </li>
+                                ))}
+                            </ul>
+
+                            <Link to="/signup" className="btn-primary w-full py-4 rounded-xl text-lg font-bold shadow-lg shadow-primary-500/20 mb-4">
+                                Começar agora
+                            </Link>
+                            
+                            <p className="text-center text-xs text-surface-400">
+                                * Setup opcional de R$ 300 para configuração e treinamento inicial.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </section>
             <section id="how-it-works" className="py-24">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="grid lg:grid-cols-2 gap-16 items-center">
