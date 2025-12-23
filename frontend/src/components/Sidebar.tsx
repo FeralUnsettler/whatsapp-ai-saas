@@ -1,4 +1,4 @@
-import { NavLink } from 'react-router-dom'
+import { NavLink, Link } from 'react-router-dom'
 import { useTheme } from '../hooks/useTheme'
 import { useAuth } from '../hooks/useAuth'
 import {
@@ -19,13 +19,13 @@ import {
 import { useState } from 'react'
 
 const navItems = [
-    { to: '/', label: 'Dashboard', icon: LayoutDashboard },
-    { to: '/conversations', label: 'Conversas', icon: MessageSquare },
-    { to: '/leads', label: 'Leads', icon: Users },
-    { to: '/whatsapp', label: 'Status WhatsApp', icon: Smartphone },
-    { to: '/agent', label: 'Agente IA', icon: Bot },
-    { to: '/billing', label: 'Cobrança', icon: CreditCard },
-    { to: '/settings', label: 'Configurações', icon: Settings },
+    { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    { to: '/dashboard/conversations', label: 'Conversas', icon: MessageSquare },
+    { to: '/dashboard/leads', label: 'Leads', icon: Users },
+    { to: '/dashboard/whatsapp', label: 'Status WhatsApp', icon: Smartphone },
+    { to: '/dashboard/agent', label: 'Agente IA', icon: Bot },
+    { to: '/dashboard/billing', label: 'Cobrança', icon: CreditCard },
+    { to: '/dashboard/settings', label: 'Configurações', icon: Settings },
 ]
 
 export function Sidebar() {
@@ -64,12 +64,12 @@ export function Sidebar() {
             >
                 {/* Header */}
                 <div className="flex items-center justify-between p-4 border-b border-[var(--color-border)]">
-                    <div className="flex items-center gap-2">
+                    <Link to="/dashboard" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
                         <div className="w-8 h-8 rounded-lg gradient-primary flex items-center justify-center">
                             <Sparkles className="w-5 h-5 text-white" />
                         </div>
                         <span className="font-semibold text-lg gradient-text">WhatsApp AI</span>
-                    </div>
+                    </Link>
                     <button
                         onClick={() => setMobileOpen(false)}
                         className="lg:hidden btn-ghost p-1"

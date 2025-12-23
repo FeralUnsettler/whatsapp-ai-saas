@@ -144,7 +144,7 @@ export function ConversationsPage() {
                         conversations.map((conv) => (
                             <Link
                                 key={conv.id}
-                                to={`/conversations/${conv.id}`}
+                                to={`/dashboard/conversations/${conv.id}`}
                                 className={`block p-4 border-b border-[var(--color-border)] hover:bg-surface-50 dark:hover:bg-surface-800/50 transition-colors ${id === conv.id ? 'bg-primary-50 dark:bg-primary-900/20' : ''
                                     }`}
                             >
@@ -194,7 +194,7 @@ export function ConversationsPage() {
                         {/* Header */}
                         <div className="p-4 border-b border-[var(--color-border)] flex items-center gap-3">
                             <Link
-                                to="/conversations"
+                                to="/dashboard/conversations"
                                 className="md:hidden btn-ghost p-2"
                                 aria-label="Voltar para conversas"
                             >

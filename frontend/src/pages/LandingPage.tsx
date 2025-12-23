@@ -49,14 +49,14 @@ export function LandingPage() {
             <nav className="fixed top-0 w-full z-50 border-b border-[var(--color-border)] bg-[var(--color-bg)]/80 backdrop-blur-md">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="flex justify-between items-center h-16">
-                        <div className="flex items-center gap-2">
+                        <Link to="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
                             <div className="w-8 h-8 rounded-lg bg-primary-500 flex items-center justify-center">
                                 <Bot className="text-white w-5 h-5" />
                             </div>
                             <span className="text-xl font-bold font-sans tracking-tight">
                                 WhatsApp <span className="gradient-text">AI SaaS</span>
                             </span>
-                        </div>
+                        </Link>
                         
                         <div className="hidden md:flex items-center gap-8">
                             <a href="#features" className="text-sm font-medium text-surface-600 hover:text-primary-500 transition-colors">Funcionalidades</a>
@@ -109,10 +109,17 @@ export function LandingPage() {
                     </p>
 
                     <div className="flex flex-col sm:flex-row items-center justify-center gap-4 animate-slide-up delay-200">
-                        <Link to="/signup" className="btn-primary px-8 py-4 text-lg rounded-xl flex items-center gap-2 group">
-                            Comece seu teste grátis
-                            <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                        </Link>
+                        {session ? (
+                            <Link to="/dashboard" className="btn-primary px-8 py-4 text-lg rounded-xl flex items-center gap-2 group">
+                                Ir para o Dashboard
+                                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                            </Link>
+                        ) : (
+                            <Link to="/signup" className="btn-primary px-8 py-4 text-lg rounded-xl flex items-center gap-2 group">
+                                Comece seu teste grátis
+                                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                            </Link>
+                        )}
                         <a href="#how-it-works" className="btn-secondary px-8 py-4 text-lg rounded-xl">
                             Ver demonstração
                         </a>
@@ -250,9 +257,15 @@ export function LandingPage() {
                                 ))}
                             </ul>
 
-                            <Link to="/signup" className="btn-primary w-full py-4 rounded-xl text-lg font-bold shadow-lg shadow-primary-500/20 mb-4">
-                                Começar agora
-                            </Link>
+                            {session ? (
+                                <Link to="/dashboard" className="btn-primary w-full py-4 rounded-xl text-lg font-bold shadow-lg shadow-primary-500/20 mb-4 text-center">
+                                    Acessar meu Dashboard
+                                </Link>
+                            ) : (
+                                <Link to="/signup" className="btn-primary w-full py-4 rounded-xl text-lg font-bold shadow-lg shadow-primary-500/20 mb-4 text-center">
+                                    Começar agora
+                                </Link>
+                            )}
                             
                             <p className="text-center text-xs text-surface-400">
                                 * Setup opcional de R$ 300 para configuração e treinamento inicial.

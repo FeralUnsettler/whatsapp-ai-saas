@@ -32,7 +32,7 @@ export function LoginPage() {
         <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-primary-50 to-emerald-50 dark:from-surface-950 dark:to-surface-900">
             <div className="w-full max-w-md animate-fade-in">
                 {/* Logo */}
-                <div className="text-center mb-8">
+                <Link to="/" className="text-center mb-8 block hover:opacity-80 transition-opacity">
                     <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl gradient-primary shadow-lg mb-4">
                         <Sparkles className="w-8 h-8 text-white" />
                     </div>
@@ -40,7 +40,7 @@ export function LoginPage() {
                     <p className="text-[var(--color-text-secondary)] mt-2">
                         Atendimento automatizado inteligente
                     </p>
-                </div>
+                </Link>
 
                 {/* Login Card */}
                 <div className="card p-8">
@@ -145,9 +145,8 @@ export function LoginPage() {
                     </div>
                 </div>
 
-                {/* Footer */}
                 <p className="text-center text-sm text-[var(--color-text-secondary)] mt-6">
-                    © 2024 WhatsApp AI SaaS. Todos os direitos reservados.
+                    WhatsAppAI®SaaS. | Desenvolvido por BananaMachinada®DS © 2026.
                 </p>
             </div>
         </div>

@@ -48,7 +48,7 @@ Deno.serve(async (req) => {
         // Get conversation details
         const { data: conversation, error: convError } = await supabase
             .from('conversations')
-            .select('*, whatsapp_numbers(*)')
+            .select('*')
             .eq('id', conversationId)
             .single();
 
@@ -62,16 +62,54 @@ Deno.serve(async (req) => {
         // Get agent configuration
         let agentConfig = null;
         if (agentId) {
-            const { data: agent } = await supabase
+            const { data: agent, error: agentError } = await supabase
                 .from('agents')
                 .select('*')
                 .eq('id', agentId)
                 .single();
+            
+            if (agentError) {
+                console.error('DEBUG: Error fetching agent:', agentError);
+            }
+            
             agentConfig = agent;
-            console.log('DEBUG: Agent found:', agent?.name);
+            console.log('DEBUG: Agent found:', agent?.name, '| is_active:', agent?.is_active);
         } else {
-            console.log('DEBUG: No agentId provided, using default');
+            // Fallback: Try to find an active agent for this client
+            console.log('DEBUG: No agentId provided, searching for active agent for client:', clientId);
+            const { data: fallbackAgent, error: fallbackError } = await supabase
+                .from('agents')
+                .select('*')
+                .eq('client_id', clientId)
+                .eq('is_active', true)
+                .limit(1)
+                .single();
+            
+            if (fallbackError) {
+                console.log('DEBUG: No fallback agent found:', fallbackError.message);
+            } else {
+                agentConfig = fallbackAgent;
+                console.log('DEBUG: Fallback agent found:', fallbackAgent?.name);
+            }
         }
+
+        // Check if agent is active
+        if (agentConfig && !agentConfig.is_active) {
+            console.log('DEBUG: Agent is not active, skipping AI response');
+            return new Response(JSON.stringify({ skipped: true, reason: 'agent_inactive' }), {
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            });
+        }
+
+        // If no active agent found at all, skip processing
+        if (!agentConfig) {
+            console.log('DEBUG: No active agent configured for this client, skipping AI response');
+            return new Response(JSON.stringify({ skipped: true, reason: 'no_agent' }), {
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            });
+        }
+
+        console.log('DEBUG: Processing with agent:', agentConfig.name, '| model:', agentConfig.model);
 
         // Get client configuration
         const { data: client } = await supabase
@@ -105,6 +143,13 @@ Deno.serve(async (req) => {
                 .from('conversations')
                 .update({ status: 'escalated' })
                 .eq('id', conversationId);
+            
+            // If it was already escalated, don't repeat the message
+            if (conversation.status === 'escalated') {
+                return new Response(JSON.stringify({ skipped: true, reason: 'already_escalated' }), {
+                    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+                });
+            }
 
             // Send escalation message
             const escalationMsg = 'Entendi! Vou transferir você para nossa equipe de atendimento. Aguarde um momento, por favor. 🙏';
@@ -144,6 +189,22 @@ Deno.serve(async (req) => {
             });
         }
 
+        // If conversation was escalated but user is talking again with non-escalating keywords,
+        // move it back to active so the bot keeps responding.
+        if (conversation.status === 'escalated') {
+            console.log('DEBUG: Moving conversation back to active');
+            await supabase
+                .from('conversations')
+                .update({ status: 'active' })
+                .eq('id', conversationId);
+        }
+
+        // Increment message count
+        await supabase
+            .from('conversations')
+            .update({ message_count: (conversation.message_count || 0) + 1 })
+            .eq('id', conversationId);
+
         // Load MCP configuration
         const mcpConfig = loadMCPConfig(
             client?.mcp_config as Record<string, Record<string, string>>,
@@ -172,7 +233,7 @@ Deno.serve(async (req) => {
         
         const aiResponse = await callGemini(systemPrompt, geminiHistory, {
             apiKey: geminiApiKey,
-            model: agentConfig?.model || 'gemini-1.5-flash',
+            model: agentConfig?.model || 'gemini-2.0-flash',
             temperature: agentConfig?.temperature || 0.7,
             maxOutputTokens: agentConfig?.max_tokens || 500,
         });

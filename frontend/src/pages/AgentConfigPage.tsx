@@ -13,11 +13,11 @@ import {
 } from 'lucide-react'
 
 export function AgentConfigPage() {
-    const { user } = useAuth()
+    const { user, loading: authLoading } = useAuth()
     const [agent, setAgent] = useState<Partial<Agent>>({
         name: 'Agente Principal',
         description: 'Agente de atendimento automatizado',
-        model: 'gemini-1.5-flash',
+        model: 'gemini-2.0-flash',
         temperature: 0.7,
         max_tokens: 500,
         system_prompt: '',
@@ -28,26 +28,38 @@ export function AgentConfigPage() {
     const [saved, setSaved] = useState(false)
 
     useEffect(() => {
-        if (user?.client_id) {
-            fetchAgent()
+        if (!authLoading) {
+            if (user?.client_id) {
+                fetchAgent()
+            } else {
+                setLoading(false)
+            }
         }
-    }, [user])
+    }, [user, authLoading])
 
     const fetchAgent = async () => {
         if (!user?.client_id) return
         
         setLoading(true)
-        const { data } = await supabase
-            .from('agents')
-            .select('*')
-            .eq('client_id', user.client_id)
-            .limit(1)
-            .single()
+        try {
+            const { data, error } = await supabase
+                .from('agents')
+                .select('*')
+                .eq('client_id', user.client_id)
+                .maybeSingle()
 
-        if (data) {
-            setAgent(data)
+            if (error && error.code !== 'PGRST116') {
+                throw error
+            }
+
+            if (data) {
+                setAgent(data)
+            }
+        } catch (error) {
+            console.error('Error fetching agent:', error)
+        } finally {
+            setLoading(false)
         }
-        setLoading(false)
     }
 
     const handleSave = async () => {
@@ -258,13 +270,14 @@ export function AgentConfigPage() {
                                 <label htmlFor="agent-model" className="label">Modelo</label>
                                 <select
                                     id="agent-model"
-                                    value={agent.model || 'gemini-1.5-flash'}
+                                    value={agent.model || 'gemini-2.0-flash'}
                                     onChange={(e) => setAgent({ ...agent, model: e.target.value })}
                                     className="input"
                                 >
-                                    <option value="gemini-1.5-flash">Gemini 1.5 Flash (Rápido)</option>
-                                    <option value="gemini-1.5-pro">Gemini 1.5 Pro (Preciso)</option>
-                                    <option value="gemini-2.0-flash-exp">Gemini 2.0 Flash</option>
+                                    <option value="gemini-2.0-flash">Gemini 2.0 Flash</option>
+                                    <option value="gemini-2.0-flash-lite">Gemini 2.0 Flash Lite</option>
+                                    <option value="gemini-2.5-flash">Gemini 2.5 Flash</option>
+                                    <option value="gemini-2.5-pro">Gemini 2.5 Pro</option>
                                 </select>
                             </div>
 

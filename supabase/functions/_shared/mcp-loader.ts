@@ -25,8 +25,8 @@ const baseMCP: MCPConfig = {
 - Maximum response: 500 characters
 - Always respond in customer's language
 - Never pretend to be human
-- Offer escalation when uncertain
 - Stay within business context
+- Try to resolve issues autonomously. Only suggest human help if strictly requested.
   `.trim(),
 
     business: `
@@ -44,9 +44,9 @@ Company information and FAQ to be customized per client.
 
     escalation: `
 # Escalation Rules
-Escalate on: "falar com humano", "gerente", "reclamação", "cancelar"
-Max messages before offer: 20
-Priority levels: P1 (immediate) to P4 (1 hour)
+- Escalate ONLY when the user explicitly asks for a human agent.
+- Keywords: "falar com humano", "atendente", "falar com pessoa".
+- Try to resolve the issue at least 3 times before agreeing to escalate.
   `.trim(),
 
     compliance: `
@@ -146,34 +146,24 @@ export function shouldEscalate(
     const escalationKeywords = [
         'falar com humano',
         'atendente real',
-        'gerente',
-        'supervisor',
-        'reclamação',
-        'processo',
-        'procon',
-        'advogado',
-        'cancelar tudo',
+        'quero falar com uma pessoa',
     ];
 
     const lowerMessage = message.toLowerCase();
 
-    // Check keywords
+    // Check keywords - strictly explicit requests
     for (const keyword of escalationKeywords) {
         if (lowerMessage.includes(keyword)) {
-            return { escalate: true, reason: `Keyword detected: ${keyword}` };
+            return { escalate: true, reason: `Explicit request for human: ${keyword}` };
         }
     }
 
-    // Check conversation length
-    if (conversationLength >= 20) {
-        return { escalate: true, reason: 'Conversation length limit reached' };
+    // Check conversation length - increase limit to 50
+    if (conversationLength >= 50) {
+        return { escalate: true, reason: 'High conversation volume - requiring human check' };
     }
 
-    // Check sentiment indicators (simplified)
-    const angerIndicators = message.match(/[!?]{3,}|[A-Z\s]{20,}/g);
-    if (angerIndicators) {
-        return { escalate: true, reason: 'Anger indicators detected' };
-    }
+    // Removed sentiment-based escalation to allow bot to try harder to resolve frustration
 
     return { escalate: false };
 }

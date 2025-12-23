@@ -30,7 +30,7 @@ interface GeminiConfig {
     maxOutputTokens?: number;
 }
 
-const DEFAULT_MODEL = 'gemini-1.5-flash';
+const DEFAULT_MODEL = 'gemini-2.0-flash';
 const DEFAULT_TEMPERATURE = 0.7;
 const DEFAULT_MAX_TOKENS = 500;
 const MAX_RETRIES = 2;
@@ -51,14 +51,54 @@ export async function callGemini(
     conversationHistory: GeminiMessage[],
     config: GeminiConfig
 ): Promise<{ text: string; tokens: number }> {
-    const model = config.model || DEFAULT_MODEL;
-    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${config.apiKey}`;
+    let model = config.model || DEFAULT_MODEL;
+
+    // Map custom/legacy model names to valid API models
+    const modelMap: Record<string, string> = {
+        'gemini-1.5-flash-latest': 'gemini-2.0-flash',
+        'gemini-1.5-flash': 'gemini-2.0-flash',
+        'gemini-2.0-flash-latest': 'gemini-2.0-flash',
+        'gemini-2.5-flash': 'gemini-2.5-flash',
+        'gemini-3-flash': 'gemini-2.5-pro',
+        'gemini-pro': 'gemini-2.0-flash', // Fallback for Pro since 1.0 is missing
+    };
+    if (modelMap[model]) {
+        model = modelMap[model];
+    }
+
+    // Use v1 for stable models and v1beta for experimental ones
+    // Use v1beta for 2.x models as they are the latest
+    const apiVersion = (model.includes('exp') || model.includes('gemini-2')) ? 'v1beta' : 'v1';
+    const apiUrl = `https://generativelanguage.googleapis.com/${apiVersion}/models/${model}:generateContent?key=${config.apiKey}`;
+    
+    console.log(`DEBUG: Calling Gemini API: ${model} | Version: ${apiVersion}`);
+
+    // We ensure the conversation history doesn't collide with our acknowledgment model role
+    const combinedHistory: GeminiMessage[] = [
+        {
+            role: 'user',
+            parts: [{ text: `System Instructions:\n${systemPrompt}\n\nStart of conversation:` }]
+        },
+        {
+            role: 'model',
+            parts: [{ text: 'Understood. I will follow these instructions.' }]
+        }
+    ];
+
+    // If history starts with 'model', wrap it or merge it to keep alternation
+    // But usually history starts with 'user' after the system prompt injection.
+    for (const msg of conversationHistory) {
+        if (combinedHistory[combinedHistory.length - 1].role === msg.role) {
+            // Merge if role is same as last injected
+            combinedHistory[combinedHistory.length - 1].parts[0].text += `\n${msg.parts[0].text}`;
+        } else {
+            combinedHistory.push(msg);
+        }
+    }
 
     const requestBody = {
-        systemInstruction: {
-            parts: [{ text: systemPrompt }],
-        },
-        contents: conversationHistory,
+        // systemInstruction: systemInstructionProp, // Disabled to avoid 400 errors or compatibility issues
+        contents: combinedHistory,
         generationConfig: {
             temperature: config.temperature ?? DEFAULT_TEMPERATURE,
             maxOutputTokens: config.maxOutputTokens ?? DEFAULT_MAX_TOKENS,
@@ -124,6 +164,27 @@ export async function callGemini(
             lastError = error as Error;
             console.error(`Gemini API attempt ${attempt + 1} failed:`, error);
 
+            // Fallback to gemini-1.0-pro on 404 (Model Not Found) if we aren't already using it
+            if (lastError.message.includes('error 404')) {
+                console.error(`ERROR: Model ${model} not found. Attempting model diagnostics...`);
+                try {
+                    const listUrl = `https://generativelanguage.googleapis.com/${apiVersion}/models?key=${config.apiKey}`;
+                    const listResp = await fetch(listUrl);
+                    if (listResp.ok) {
+                        const listData = await listResp.json();
+                        const models = listData.models?.map((m: { name: string }) => m.name.replace('models/', '')) || [];
+                        console.log('DEBUG: Available models for this key:', models);
+                    }
+                } catch (e) {
+                    console.error('Failed to list models:', e);
+                }
+
+                if (model !== 'gemini-2.0-flash') {
+                    console.log(`Model ${model} fallback to gemini-2.0-flash...`);
+                    return callGemini(systemPrompt, conversationHistory, { ...config, model: 'gemini-2.0-flash' });
+                }
+            }
+
             if (attempt < MAX_RETRIES) {
                 await sleep(RETRY_DELAY_MS * (attempt + 1));
             }
@@ -139,10 +200,24 @@ export async function callGemini(
 export function formatConversationHistory(
     messages: { direction: string; content: string }[]
 ): GeminiMessage[] {
-    return messages.map((msg) => ({
-        role: msg.direction === 'inbound' ? 'user' : 'model',
-        parts: [{ text: msg.content }],
-    }));
+    const formatted: GeminiMessage[] = [];
+    
+    for (const msg of messages) {
+        const role = msg.direction === 'inbound' ? 'user' : 'model';
+        const text = msg.content || '';
+        
+        if (formatted.length > 0 && formatted[formatted.length - 1].role === role) {
+            // Merge consecutive messages from same role
+            formatted[formatted.length - 1].parts[0].text += `\n${text}`;
+        } else {
+            formatted.push({
+                role,
+                parts: [{ text }],
+            });
+        }
+    }
+    
+    return formatted;
 }
 
 /**
@@ -154,7 +229,8 @@ export async function analyzeImage(
     prompt: string,
     config: GeminiConfig
 ): Promise<string> {
-    const model = 'gemini-1.5-flash';
+    const model = 'gemini-2.0-flash';
+    // Use v1beta for 2.0 vision
     const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${config.apiKey}`;
 
     const requestBody = {

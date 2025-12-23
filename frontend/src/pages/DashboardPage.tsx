@@ -220,7 +220,7 @@ export function DashboardPage() {
                     <div className="flex items-center justify-between p-4 border-b border-[var(--color-border)]">
                         <h2 className="font-semibold">Conversas Recentes</h2>
                         <Link
-                            to="/conversations"
+                            to="/dashboard/conversations"
                             className="text-sm text-primary-500 hover:text-primary-600 flex items-center gap-1"
                         >
                             Ver todas <ArrowRight className="w-4 h-4" />
@@ -243,7 +243,7 @@ export function DashboardPage() {
                             recentConversations.map((conv) => (
                                 <Link
                                     key={conv.id}
-                                    to={`/conversations/${conv.id}`}
+                                    to={`/dashboard/conversations/${conv.id}`}
                                     className="p-4 flex items-center gap-3 hover:bg-surface-50 dark:hover:bg-surface-800/50 transition-colors"
                                 >
                                     <div className="w-10 h-10 rounded-full bg-primary-100 dark:bg-primary-900/50 flex items-center justify-center text-primary-600 dark:text-primary-400 font-medium">
@@ -286,7 +286,7 @@ export function DashboardPage() {
                     <div className="flex items-center justify-between p-4 border-b border-[var(--color-border)]">
                         <h2 className="font-semibold">Leads Recentes</h2>
                         <Link
-                            to="/leads"
+                            to="/dashboard/leads"
                             className="text-sm text-primary-500 hover:text-primary-600 flex items-center gap-1"
                         >
                             Ver todos <ArrowRight className="w-4 h-4" />
@@ -309,7 +309,7 @@ export function DashboardPage() {
                             recentLeads.map((lead) => (
                                 <Link
                                     key={lead.id}
-                                    to={`/leads/${lead.id}`}
+                                    to={`/dashboard/leads`}
                                     className="p-4 flex items-center gap-3 hover:bg-surface-50 dark:hover:bg-surface-800/50 transition-colors"
                                 >
                                     <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center text-blue-600 dark:text-blue-400 font-medium">
