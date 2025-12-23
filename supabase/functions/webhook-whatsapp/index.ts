@@ -125,33 +125,34 @@ Deno.serve(async (req) => {
                 metadata: { message_id: message.messageId },
             });
 
-            // Trigger message processing
+            // Trigger message processing asynchronously
             console.log('DEBUG: Triggering process-message for conv:', conversation.id);
             const processUrl = `${supabaseUrl}/functions/v1/process-message`;
-            try {
-                const processRes = await fetch(processUrl, {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${serviceRoleKey}`,
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        conversationId: conversation.id,
-                        messageId: message.messageId,
-                        clientId: waNumber.client_id,
-                        agentId: waNumber.agent_id,
-                        messageType: message.messageType,
-                        imageUrl: message.imageUrl,
-                    }),
-                });
-                console.log('DEBUG: process-message response status:', processRes.status);
-                if (!processRes.ok) {
-                    const errorText = await processRes.text();
-                    console.error('DEBUG: process-message failed:', errorText);
+            
+            // Fire and forget - don't await to avoid webhook timeouts/retries
+            fetch(processUrl, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${serviceRoleKey}`,
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    conversationId: conversation.id,
+                    messageId: message.messageId,
+                    clientId: waNumber.client_id,
+                    agentId: waNumber.agent_id,
+                    messageType: message.messageType,
+                    imageUrl: message.imageUrl,
+                }),
+            }).then(res => {
+                if (!res.ok) {
+                    res.text().then(txt => console.error('DEBUG: process-message error:', txt));
+                } else {
+                    console.log('DEBUG: process-message triggered successfully');
                 }
-            } catch (pError) {
-                console.error('DEBUG: Error calling process-message:', pError);
-            }
+            }).catch(pError => {
+                console.error('DEBUG: process-message fetch failed:', pError);
+            });
 
             return new Response(JSON.stringify({ success: true }), {
                 status: 200,
