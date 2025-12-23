@@ -35,19 +35,8 @@ const DEFAULT_MAX_TOKENS = 1000;
 const MAX_RETRIES = 3;
 const RETRY_DELAY_MS = 2000;
 
-async function sleep(ms: number) {
+function sleep(ms: number) {
     return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-async function getAvailableModels(apiKey: string, version: string): Promise<string[]> {
-    try {
-        const res = await fetch(`https://generativelanguage.googleapis.com/${version}/models?key=${apiKey}`);
-        if (!res.ok) return [];
-        const data = await res.json();
-        return data.models?.map((m: any) => m.name.replace('models/', '')) || [];
-    } catch {
-        return [];
-    }
 }
 
 export async function callGemini(
@@ -103,7 +92,7 @@ export async function callGemini(
         }
     };
 
-    let lastError: any = null;
+    let lastError: Error | null = null;
     const fallbacks = ['gemini-2.0-flash', 'gemini-flash-latest', 'gemini-pro-latest'];
     
     for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
@@ -117,11 +106,20 @@ export async function callGemini(
 
             if (response.status === 404) {
                 console.error(`DEBUG: Model ${model} NOT FOUND (404).`);
+                
+                // Try fallbacks if first attempt fails with 404
                 if (fallbacks.length > 0) {
                     const nextModel = fallbacks.shift();
-                    if (nextModel === model) return callGemini(systemPrompt, conversationHistory, { ...config, model: fallbacks.shift() });
-                    console.log(`DEBUG: Trying fallback model: ${nextModel}`);
-                    return callGemini(systemPrompt, conversationHistory, { ...config, model: nextModel });
+                    if (nextModel === model) {
+                        const nextNext = fallbacks.shift();
+                        if (nextNext) {
+                            console.log(`DEBUG: Trying fallback model: ${nextNext}`);
+                            return callGemini(systemPrompt, conversationHistory, { ...config, model: nextNext });
+                        }
+                    } else if (nextModel) {
+                        console.log(`DEBUG: Trying fallback model: ${nextModel}`);
+                        return callGemini(systemPrompt, conversationHistory, { ...config, model: nextModel });
+                    }
                 }
             }
 
@@ -139,7 +137,8 @@ export async function callGemini(
             const text = candidate.content?.parts?.map((part) => part.text).join('') || '';
             const tokens = data.usageMetadata?.totalTokenCount || 0;
             return { text, tokens };
-        } catch (error) {
+        } catch (err) {
+            const error = err instanceof Error ? err : new Error(String(err));
             lastError = error;
             console.error(`DEBUG: Attempt ${attempt + 1} failed: ${error.message}`);
             
